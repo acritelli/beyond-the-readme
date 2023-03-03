@@ -1,0 +1,16 @@
+- hosts: webservers
+  # any_errors_fatal: true
+  serial: 3
+  max_fail_percentage: 49
+  tasks:
+    - name: Check for manual change disable file
+      ansible.builtin.file:
+        path: /var/my-app/changes-disabled
+        state: file
+      register: change_disable_file_status
+      failed_when: change_disable_file_status.state != "absent"
+
+    - name: Restart app
+      ansible.builtin.service:
+        name: my-app
+        state: restarted

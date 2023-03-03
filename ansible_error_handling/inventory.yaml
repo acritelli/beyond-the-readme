@@ -1,0 +1,14 @@
+all:
+  children:
+    webservers:
+      hosts:
+        webserver-1.example.com:
+          ansible_host: 192.168.122.191
+        webserver-2.example.com:
+          ansible_host: 192.168.122.97
+        webserver-3.example.com:
+          ansible_host: 192.168.122.125
+        webserver-4.example.com:
+          ansible_host: 192.168.122.192
+      vars:
+        ansible_user: root
