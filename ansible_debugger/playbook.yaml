@@ -1,0 +1,27 @@
+- name: Test debugger
+  hosts: localhost
+  gather_facts: false
+  vars:
+    website: https://www.acritelli.com
+  tasks:
+    - name: Test URL
+      ansible.builtin.uri:
+        url: "{{ website }}"
+        method: "GET"
+      register: web_result
+      debugger: on_failed
+
+    - name: Print a message
+      ansible.builtin.debug:
+        msg: "Made it here!"
+
+    - name: Check for file existence
+      ansible.builtin.file:
+        path: /etc
+        state: directory
+      register: file_result
+      debugger: always
+
+    - name: Print registered result
+      ansible.builtin.debug:
+        msg: "{{ file_result }}"
