@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: btr-sidecar-example
+  annotations:
+    vault.hashicorp.com/agent-inject: 'true'
+    vault.hashicorp.com/agent-configmap: 'vault-agent'
+    vault.hashicorp.com/agent-pre-populate: "false"
+spec:
+  containers:
+  - image: curlimages/curl:latest
+    name: curl
+    command:
+      - sleep
+      - infinity

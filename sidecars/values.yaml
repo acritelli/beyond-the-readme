@@ -1,0 +1,14 @@
+injector:
+  enabled: true
+  agentImage:
+    repository: "hashicorp/vault"
+    tag: "1.13.0"
+
+server:
+  dev:
+    enabled: true
+    devRootToken: "root"
+
+  image:
+    repository: "hashicorp/vault"
+    tag: "1.13.0"
