@@ -1,0 +1,13 @@
+- hosts: webservers
+  tasks:
+    - name: Check for manual change disable file
+      ansible.builtin.file:
+        path: /var/my-app/changes-disabled
+        state: file
+      register: change_disable_file_status
+      failed_when: change_disable_file_status.state != "absent"
+
+    - name: Task with timeout
+      ansible.builtin.command:
+        cmd: sleep 10
+      timeout: 5

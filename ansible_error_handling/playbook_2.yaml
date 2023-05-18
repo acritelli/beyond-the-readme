@@ -1,0 +1,42 @@
+- hosts: webservers
+  force_handlers: true
+  tasks:
+    - name: Enable healthcheck
+      ansible.builtin.blockinfile:
+        path: /var/my-app/monitoring_config.ini
+        block: "enable_monitoring=1"
+      ignore_errors: true
+
+    - name: Copy application configuration file
+      ansible.builtin.copy:
+        src: files/app_config.ini
+        dest: /var/my-app/app_config.ini
+        owner: root
+        group: root
+        mode: 0640
+      notify:
+        - Restart app
+
+    - name: Enable authentication
+      block:
+        - name: Add authentication configuration
+          ansible.builtin.blockinfile:
+            path: /var/my-app/auth_config.ini
+            block: "auth_enabled=1"
+      rescue:
+        - name: Copy base authentication configuration file
+          ansible.builtin.copy:
+            src: files/auth_config.ini
+            dest: /var/my-app/auth_config.ini
+            owner: root
+            group: root
+            mode: 0640
+      always:
+        - name: Clear authentication cache
+          ansible.builtin.command:
+            cmd: /usr/local/sbin/clear-auth-cache
+  handlers:
+    - name: Restart app
+      ansible.builtin.service:
+        name: my-app
+        state: restarted
