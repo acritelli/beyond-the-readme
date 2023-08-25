@@ -1,0 +1,76 @@
+- hosts: servers
+  vars:
+    healthchecks_io_api_key: "<FILL THIS IN>"
+  tasks:
+
+    - name: Find healthcheck URLs
+      block:
+      - name: Get checks
+        ansible.builtin.uri:
+          url: "https://healthchecks.io/api/v2/checks/"
+          headers:
+            X-API-Key: "{{ healthchecks_io_api_key }}"
+          method: GET
+          status_code: 200
+        delegate_to: localhost
+        register: all_checks
+
+      - name: Set check variables if check exists
+        ansible.builtin.set_fact:
+          healthcheck_io_pause_url: "{{ all_checks.json | community.general.json_query(pause_url_query) | last }}"
+          healthcheck_io_resume_url: "{{ all_checks.json | community.general.json_query(resume_url_query) | last }}"
+        vars:
+          pause_url_query: "checks[?name=='{{ inventory_hostname}}-uptime'].pause_url"
+          resume_url_query: "checks[?name=='{{ inventory_hostname}}-uptime'].resume_url"
+      rescue:
+      - name: Create check
+        ansible.builtin.uri:
+          url: "https://healthchecks.io/api/v2/checks/"
+          headers:
+            X-API-Key: "{{ healthchecks_io_api_key }}"
+          method: POST
+          body_format: json
+          body:
+            name: "{{ inventory_hostname }}-uptime"
+            timeout: 300
+          status_code: 
+            - 200
+            - 201
+        delegate_to: localhost
+        register: created_check
+
+      - name: Set check variables for newly created check
+        ansible.builtin.set_fact:
+          healthcheck_io_pause_url: "{{ created_check.json.pause_url }}"
+          healthcheck_io_resume_url: "{{ created_check.json.resume_url }}"
+
+    - name: Patch and reboot host
+      block:
+      - name: Pause healthcheck
+        ansible.builtin.uri:
+          url: "{{ healthcheck_io_pause_url }}"
+          headers:
+            X-API-Key: "{{ healthchecks_io_api_key }}"
+          method: POST
+          status_code: 200
+        delegate_to: localhost
+
+      - name: Patch server
+        ansible.builtin.package:
+          name: "*"
+          state: latest
+
+      - name: Reboot host
+        ansible.builtin.reboot:
+          connect_timeout: 30
+          reboot_timeout: 30
+        timeout: 30
+      always:
+      - name: Enable healthcheck
+        ansible.builtin.uri:
+          url: "{{ healthcheck_io_resume_url }}"
+          headers:
+            X-API-Key: "{{ healthchecks_io_api_key }}"
+          method: POST
+          status_code: 200
+        delegate_to: localhost
